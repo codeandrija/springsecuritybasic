@@ -1,13 +1,13 @@
-package com.ezybytes.springsecuritybasic;
+package com.eazybytes;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SpringsecuritybasicApplication {
+public class Main {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SpringsecuritybasicApplication.class, args);
+		SpringApplication.run(Main.class, args);
 	}
 
 }
