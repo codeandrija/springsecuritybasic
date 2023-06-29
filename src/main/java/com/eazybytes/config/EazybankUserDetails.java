@@ -1,5 +1,6 @@
 package com.eazybytes.config;
 
+import com.eazybytes.model.Authority;
 import com.eazybytes.model.Customer;
 import com.eazybytes.repository.CustomerRepository;
 import org.springframework.security.core.GrantedAuthority;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class EazybankUserDetails implements UserDetailsService {
@@ -32,9 +34,20 @@ public class EazybankUserDetails implements UserDetailsService {
         } else {
             userName = customers.get(0).getEmail();
             password = customers.get(0).getPwd();
-            authorities = new ArrayList<>();
-            authorities.add(new SimpleGrantedAuthority(customers.get(0).getRole()));
+            System.out.println(authorityList(customers.get(0).getAuthority()));
         }
-        return new User(username, password, authorities);
+        return new User(username, password,authorityList(customers.get(0).getAuthority()));
     }
+
+
+    private List<GrantedAuthority> authorityList(Set<Authority> authoritySet){
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        for(Authority authority : authoritySet){
+            authorities.add(new SimpleGrantedAuthority(authority.getName()));
+        }
+        return authorities;
+
+    }
+
+
 }

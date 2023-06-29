@@ -1,20 +1,26 @@
 package com.eazybytes.config;
 
+import com.eazybytes.filter.CsrfFilter;
+import com.eazybytes.filter.CountryFilter;
+import com.eazybytes.filter.JWTTokenGeneratorFilter;
+import com.eazybytes.filter.JWTTokenvalidatorFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 
-import javax.sql.DataSource;
+import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 public class ProjectSecurityConfig {
@@ -22,19 +28,41 @@ public class ProjectSecurityConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 
-        http.csrf((csrf) -> csrf.disable()).
-                authorizeHttpRequests((requests) -> requests.requestMatchers("/myAccount", "/myBalance", "/myLoans", "/myCard").authenticated()
+        http.sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        http.cors((cors) -> cors.configurationSource(new CorsConfigurationSource() {
+            @Override
+            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                CorsConfiguration config = new CorsConfiguration();
+                config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                config.setAllowedMethods(Collections.singletonList("*"));
+                config.setAllowCredentials(true);
+                config.setAllowedHeaders(Collections.singletonList("*"));
+                config.setExposedHeaders(Arrays.asList("Authorization"));
+                config.setMaxAge(3600L);
+                return config;
+            }
+        }));
+
+
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        http.csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler).ignoringRequestMatchers("/contact", "/register")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())).
+                addFilterAfter(new CsrfFilter(), BasicAuthenticationFilter.class).
+                addFilterBefore(new CountryFilter(), BasicAuthenticationFilter.class).
+                addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class).
+                addFilterBefore(new JWTTokenvalidatorFilter(), BasicAuthenticationFilter.class);
+
+
+        http.authorizeHttpRequests((requests) -> requests.requestMatchers("/user")
+                        .authenticated().requestMatchers("/myAccount").hasRole("USER")
+                        .requestMatchers("/myBalance").hasAnyRole("ADMIN")
+                        .requestMatchers("/myLoans").hasRole("USER")
+                        .requestMatchers("/myCards").hasRole("USER")
                         .requestMatchers("/notices", "/contact", "/register").permitAll())
-                .formLogin(Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults());
+                .formLogin(Customizer.withDefaults()).httpBasic(Customizer.withDefaults());
         return http.build();
-
     }
-
-//    @Bean
-//    public UserDetailsManager userDetailsService(DataSource dataSource){
-//        return new JdbcUserDetailsManager(dataSource);
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

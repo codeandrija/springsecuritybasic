@@ -1,17 +1,25 @@
 package com.eazybytes.config;
 
+import com.eazybytes.model.Authority;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+@Service
 public class UserAndPassProvider implements AuthenticationProvider {
 
     private final UserDetailsService userDetailsService;
@@ -38,6 +46,8 @@ public class UserAndPassProvider implements AuthenticationProvider {
         }
 
     }
+
+
 
     @Override
     public boolean supports(Class<?> authentication) {
